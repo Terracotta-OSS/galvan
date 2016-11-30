@@ -38,4 +38,12 @@ public abstract class AbstractHarnessTest<C extends ITestClusterConfiguration> e
       throw error;
     }
   }
+
+  public void setup() throws Exception {
+    setUp();
+  }
+
+  public void teardown() throws Exception {
+    tearDown();
+  }  
 }

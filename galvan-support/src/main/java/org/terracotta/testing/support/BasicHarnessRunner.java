@@ -34,6 +34,23 @@ public class BasicHarnessRunner extends AbstractHarnessRunner<BasicTestClusterCo
   @Override
   protected void runTest(EnvironmentOptions environmentOptions, ITestMaster<BasicTestClusterConfiguration> masterClass, DebugOptions debugOptions, VerboseManager verboseManager) throws IOException, GalvanFailureException {
     BasicHarnessEntry harness = new BasicHarnessEntry();
-    harness.runTestHarness(environmentOptions, masterClass, debugOptions, verboseManager);
+    if (masterClass instanceof AbstractHarnessTest) {
+      try {
+        ((AbstractHarnessTest)masterClass).setup();
+      } catch (Exception e) {
+        throw new GalvanFailureException("", e);
+      }
+    }
+    try {
+      harness.runTestHarness(environmentOptions, masterClass, debugOptions, verboseManager);
+    } finally {
+      if (masterClass instanceof AbstractHarnessTest) {
+        try {
+          ((AbstractHarnessTest)masterClass).teardown();
+        } catch (Exception e) {
+          throw new GalvanFailureException("", e);
+        }
+      }
+    }
   }
 }
