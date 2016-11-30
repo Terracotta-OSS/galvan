@@ -20,6 +20,7 @@ import java.io.IOException;
 import org.terracotta.testing.api.ITestMaster;
 import org.terracotta.testing.api.BasicTestClusterConfiguration;
 import org.terracotta.testing.logging.VerboseManager;
+import org.terracotta.testing.support.AbstractHarnessTest;
 
 
 public class BasicHarnessMain {
@@ -43,7 +44,24 @@ public class BasicHarnessMain {
       }
       try {
         BasicHarnessEntry harness = new BasicHarnessEntry();
-        harness.runTestHarness(environmentOptions, master, debugOptions, verboseManager);
+        if (master instanceof AbstractHarnessTest) {
+          try {
+            ((AbstractHarnessTest)master).setup();
+          } catch (Exception e) {
+            throw new GalvanFailureException("", e);
+          }
+        }
+        try {
+          harness.runTestHarness(environmentOptions, master, debugOptions, verboseManager);
+        } finally {
+          if (master instanceof AbstractHarnessTest) {
+            try {
+              ((AbstractHarnessTest)master).teardown();
+            } catch (Exception e) {
+              throw new GalvanFailureException("", e);
+            }
+          }
+        }
         System.out.println("TEST RUN SUCCESSFUL!");
       } catch (GalvanFailureException e) {
         System.out.println("TEST FAILED! " + e.getLocalizedMessage());
