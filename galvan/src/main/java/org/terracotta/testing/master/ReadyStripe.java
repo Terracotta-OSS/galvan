@@ -52,7 +52,13 @@ public class ReadyStripe {
    * @throws IOException Thrown in case something went wrong during server installation.
    * @throws GalvanFailureException Thrown in case starting the servers in the stripe experienced a failure.
    */
-  public static ReadyStripe configureAndStartStripe(GalvanStateInterlock interlock, ITestStateManager stateManager, VerboseManager stripeVerboseManager, String serverInstallDirectory, String kitOriginDirectory, int serversToCreate, int heapInM, int serverStartPort, int serverDebugPortStart, int serverStartNumber, List<String> extraJarPaths, String namespaceFragment, String serviceFragment, String entityFragment, int clientReconnectWindowTime) throws IOException, GalvanFailureException {
+  public static ReadyStripe configureAndStartStripe(GalvanStateInterlock interlock, ITestStateManager stateManager,
+                                                    VerboseManager stripeVerboseManager, String serverInstallDirectory,
+                                                    String kitOriginDirectory, int serversToCreate, int heapInM,
+                                                    int serverStartPort, int serverDebugPortStart, int serverStartNumber,
+                                                    List<String> extraJarPaths, String namespaceFragment,
+                                                    String serviceFragment, String entityFragment,
+                                                    int clientReconnectWindowTime, String logLevel) throws IOException, GalvanFailureException {
     ContextualLogger configLogger = stripeVerboseManager.createComponentManager("[ConfigBuilder]").createHarnessLogger();
     // Create the config builder.
     ConfigBuilder configBuilder = ConfigBuilder.buildStartPort(configLogger, serverStartPort);
@@ -71,7 +77,7 @@ public class ReadyStripe {
           ? (serverDebugPortStart + i)
           : 0;
       configBuilder.addServer(serverName);
-      installer.installNewServer(serverName, heapInM, debugPort);
+      installer.installNewServer(serverName, heapInM, debugPort, logLevel);
     }
     // The config is built and stripe has been installed so write the config to the stripe.
     String configText = configBuilder.buildConfig();
@@ -101,7 +107,7 @@ public class ReadyStripe {
   }
 
   public static ReadyStripe configureAndStartStripe(GalvanStateInterlock interlock, ITestStateManager stateManager, VerboseManager stripeVerboseManager, String serverInstallDirectory, String kitOriginDirectory, int serversToCreate, int heapInM, int serverStartPort, int serverDebugPortStart, int serverStartNumber, List<String> extraJarPaths, String namespaceFragment, String serviceFragment, String entityFragment) throws IOException, GalvanFailureException {
-    return configureAndStartStripe(interlock, stateManager, stripeVerboseManager, serverInstallDirectory, kitOriginDirectory, serversToCreate, heapInM, serverStartPort, serverDebugPortStart, serverStartNumber, extraJarPaths, namespaceFragment, serviceFragment, entityFragment, ConfigBuilder.DEFAULT_CLIENT_RECONNECT_WINDOW_TIME);
+    return configureAndStartStripe(interlock, stateManager, stripeVerboseManager, serverInstallDirectory, kitOriginDirectory, serversToCreate, heapInM, serverStartPort, serverDebugPortStart, serverStartNumber, extraJarPaths, namespaceFragment, serviceFragment, entityFragment, ConfigBuilder.DEFAULT_CLIENT_RECONNECT_WINDOW_TIME, null);
   }
 
   public final IMultiProcessControl stripeControl;

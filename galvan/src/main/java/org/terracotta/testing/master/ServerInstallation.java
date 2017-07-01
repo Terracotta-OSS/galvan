@@ -34,10 +34,11 @@ public class ServerInstallation {
   private final File serverWorkingDirectory;
   private final int heapInM;
   private final int debugPort;
+  private final String logLevel;
   private boolean configWritten;
   private boolean hasCreatedProcess;
 
-  public ServerInstallation(GalvanStateInterlock stateInterlock, ITestStateManager stateManager, VerboseManager stripeVerboseManager, String serverName, File serverWorkingDirectory, int heapInM, int debugPort) {
+  public ServerInstallation(GalvanStateInterlock stateInterlock, ITestStateManager stateManager, VerboseManager stripeVerboseManager, String serverName, File serverWorkingDirectory, int heapInM, int debugPort, String logLevel) {
     this.stateInterlock = stateInterlock;
     this.stateManager = stateManager;
     this.stripeVerboseManager = stripeVerboseManager;
@@ -45,6 +46,7 @@ public class ServerInstallation {
     this.serverWorkingDirectory = serverWorkingDirectory;
     this.heapInM = heapInM;
     this.debugPort = debugPort;
+    this.logLevel = logLevel;
   }
 
   public void overwriteConfig(String config) throws IOException {
@@ -73,7 +75,7 @@ public class ServerInstallation {
     // Create the VerboseManager for the instance.
     VerboseManager serverVerboseManager = this.stripeVerboseManager.createComponentManager("[" + this.serverName + "]");
     // Create the process and check it out.
-    ServerProcess process = new ServerProcess(this.stateInterlock, this.stateManager, serverVerboseManager, this, this.serverName, this.serverWorkingDirectory, this.heapInM, this.debugPort);
+    ServerProcess process = new ServerProcess(this.stateInterlock, this.stateManager, serverVerboseManager, this, this.serverName, this.serverWorkingDirectory, this.heapInM, this.debugPort, this.logLevel);
     this.hasCreatedProcess = true;
     return process;
   }
