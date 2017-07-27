@@ -50,6 +50,7 @@ public class ServerProcess {
   private final String serverName;
   private final int heapInM;
   private final int debugPort;
+  private final String logLevel;
   private final File serverWorkingDirectory;
   private final String eyeCatcher;
 // make sure only one caller is messing around on the process
@@ -70,7 +71,7 @@ public class ServerProcess {
   private OutputStream outputStream;
   private OutputStream errorStream;
 
-  public ServerProcess(GalvanStateInterlock stateInterlock, ITestStateManager stateManager, VerboseManager serverVerboseManager, ServerInstallation underlyingInstallation, String serverName, File serverWorkingDirectory, int heapInM, int debugPort) {
+  public ServerProcess(GalvanStateInterlock stateInterlock, ITestStateManager stateManager, VerboseManager serverVerboseManager, ServerInstallation underlyingInstallation, String serverName, File serverWorkingDirectory, int heapInM, int debugPort, String logLevel) {
     this.stateInterlock = stateInterlock; 
     this.stateManager = stateManager;
     // We just want to create the harness logger and the one for the inferior process but then discard the verbose manager.
@@ -82,6 +83,7 @@ public class ServerProcess {
     Assert.assertTrue(heapInM > 0);
     this.heapInM = heapInM;
     this.debugPort = debugPort;
+    this.logLevel = logLevel;
     this.serverWorkingDirectory = serverWorkingDirectory;
     // Create our eye-catcher for looking up sub-processes.
     this.eyeCatcher = UUID.randomUUID().toString();
@@ -144,7 +146,7 @@ public class ServerProcess {
     String javaHome = getJavaHome();
     
     // Put together any additional options we wanted to pass to the VM under the start script.
-    String javaArguments = getJavaArguments(this.debugPort);
+    String javaArguments = getJavaArguments();
     
     // Get the command to invoke the script.
     String startScript = getStartScriptCommand();
@@ -212,18 +214,21 @@ public class ServerProcess {
     return startScript;
   }
 
-  private String getJavaArguments(int debugPort) {
+  private String getJavaArguments() {
     // We want to bootstrap the variable with whatever is in our current environment.
     String javaOpts = System.getenv("JAVA_OPTS");
     if (null == javaOpts) {
       javaOpts = "";
     }
     javaOpts += " -Xms" + this.heapInM + "m -Xmx" + this.heapInM + "m";
-    if (debugPort > 0) {
+    if (this.debugPort > 0) {
       // Set up the client to block while waiting for connection.
       javaOpts += " -Xdebug -Xrunjdwp:transport=dt_socket,server=y,address=" + debugPort;
       // Log that debug is enabled.
       this.harnessLogger.output("NOTE:  Starting server \"" + this.serverName + "\" with debug port: " + debugPort);
+    }
+    if (this.logLevel != null) {
+      javaOpts+= " -Dtc.log.level="+this.logLevel;
     }
     return javaOpts;
   }

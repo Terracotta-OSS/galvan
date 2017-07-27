@@ -15,7 +15,7 @@
     </encoder>
   </appender>
 
-  <root level="INFO">
+  <root level="${tc.log.level:-INFO}">
     <appender-ref ref="TC_BASE" />
     <appender-ref ref="SYSOUT" />
   </root>
