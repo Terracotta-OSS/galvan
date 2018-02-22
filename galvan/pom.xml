@@ -21,7 +21,7 @@ limitations under the License.
   <parent>
     <groupId>org.terracotta</groupId>
     <artifactId>galvan-root</artifactId>
-    <version>1.4.0-pre8</version>
+    <version>1.4.0</version>
   </parent>
 
   <artifactId>galvan</artifactId>
