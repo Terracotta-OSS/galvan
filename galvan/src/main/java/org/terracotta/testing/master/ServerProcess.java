@@ -275,6 +275,7 @@ public class ServerProcess {
     eventMap.put("Terracotta Server instance has started up as ACTIVE node", activeReadyName);
     eventMap.put("Moved to State[ PASSIVE-STANDBY ]", passiveReadyName);
     eventMap.put("Restarting the server", zapEventName);
+    eventMap.put("Restarting server", zapEventName);
     eventMap.put("WARN", warn);
     eventMap.put("ERROR", err);
     
