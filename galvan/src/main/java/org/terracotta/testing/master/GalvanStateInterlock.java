@@ -46,6 +46,9 @@ private final ITestWaiter sharedLockState;
   private ServerProcess activeServer;
   // There can be any number of passives (a server enters this state when it becomes PASSIVE_STANDBY).
   private final List<ServerProcess> passiveServers = new Vector<ServerProcess>();
+  // Server in diagnostic mode
+  private final List<ServerProcess> diagnosticModeServers = new Vector<>();
+
   // A server which is running but hasn't yet reported in its state waits as "unknownRunning".
   private final List<ServerProcess> unknownRunningServers = new Vector<ServerProcess>();
   // A server which has returned an exit status, or hasn't yet become running, is a terminated server.
@@ -69,6 +72,7 @@ private final ITestWaiter sharedLockState;
         activeServer.setCrashExpected(ignoreServerCrashes);
       }
       passiveServers.forEach(process->process.setCrashExpected(ignoreServerCrashes));
+      diagnosticModeServers.forEach(process->process.setCrashExpected(ignoreServerCrashes));
       unknownRunningServers.forEach(process->process.setCrashExpected(ignoreServerCrashes));
       terminatedServers.forEach(process->process.setCrashExpected(ignoreServerCrashes));
     }
@@ -245,7 +249,10 @@ private final ITestWaiter sharedLockState;
 
   public boolean isServerRunning(ServerProcess server) {
     synchronized (this.sharedLockState) {
-      return this.unknownRunningServers.contains(server) || this.passiveServers.contains(server) || server.equals(this.activeServer);
+      return unknownRunningServers.contains(server) ||
+          passiveServers.contains(server) ||
+          diagnosticModeServers.contains(server) ||
+          server.equals(this.activeServer);
     }
   }  
 
@@ -261,6 +268,17 @@ private final ITestWaiter sharedLockState;
   }
 
   @Override
+  public void serverInDiagnosticMode(ServerProcess server) {
+    synchronized (this.sharedLockState) {
+      boolean didRemove = this.unknownRunningServers.remove(server);
+      this.logger.output("server in diagnostic mode: " + server);
+      localAssert(didRemove, server);
+      this.diagnosticModeServers.add(server);
+      this.sharedLockState.notifyAll();
+    }
+  }
+
+  @Override
   public void serverDidShutdown(ServerProcess server) {
     synchronized (this.sharedLockState) {
       this.logger.output("serverDidShutdown: " + server);
@@ -269,6 +287,8 @@ private final ITestWaiter sharedLockState;
         this.activeServer = null;
       } else if (this.passiveServers.contains(server)) {
         this.passiveServers.remove(server);
+      } else if (this.diagnosticModeServers.contains(server)) {
+        this.diagnosticModeServers.remove(server);
       } else if (this.unknownRunningServers.contains(server)) {
         this.unknownRunningServers.remove(server);
       } else {
@@ -337,6 +357,7 @@ private final ITestWaiter sharedLockState;
     synchronized (this.sharedLockState) {
       List<ServerProcess> copy = new ArrayList<>();
       copy.addAll(this.passiveServers);
+      copy.addAll(this.diagnosticModeServers);
       copy.addAll(this.unknownRunningServers);
       if (activeServer != null) {
         copy.add(this.activeServer);
@@ -357,6 +378,7 @@ private final ITestWaiter sharedLockState;
     synchronized (this.sharedLockState) {
       return (null == this.activeServer)
           && this.passiveServers.isEmpty()
+          && this.diagnosticModeServers.isEmpty()
           && this.unknownRunningServers.isEmpty()
           && this.runningClients.isEmpty();
     }
@@ -379,6 +401,7 @@ private final ITestWaiter sharedLockState;
         synchronized (this.sharedLockState) {
           this.logger.output("* forceShutdown waiting on active: " + (null != this.activeServer)
               + " passives: " + this.passiveServers.size()
+              + " diagnostic mode servers: " + this.diagnosticModeServers.size()
               + " unknown: " + this.unknownRunningServers.size()
               + " clients: " + this.runningClients.size()
               );
@@ -398,6 +421,7 @@ private final ITestWaiter sharedLockState;
         if (System.currentTimeMillis() > timeExpired) {
           this.logger.output("* forceShutdown FAILED waiting on active: " + (null != this.activeServer)
               + " passives: " + this.passiveServers.size()
+              + " diagnostic mode servers: " + this.diagnosticModeServers.size()
               + " unknown: " + this.unknownRunningServers.size()
               + " clients: " + this.runningClients.size());
           throw new RuntimeException("FORCE SHUTDOWN FAILED:" + toString());
@@ -423,6 +447,7 @@ private final ITestWaiter sharedLockState;
     return super.toString()
         + "\n\tActive: " + this.activeServer
         + "\n\tPassives: " + this.passiveServers
+        + "\n\tDiagnostic mode servers: " + this.diagnosticModeServers
         + "\n\tUnknown: " + this.unknownRunningServers
         + "\n\tTerminated: " + this.terminatedServers
         + "\n\tClients: " + this.runningClients

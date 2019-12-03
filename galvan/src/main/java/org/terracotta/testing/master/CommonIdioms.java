@@ -29,7 +29,8 @@ import org.terracotta.testing.logging.VerboseManager;
  */
 public class CommonIdioms {
   public static ReadyStripe setupConfigureAndStartStripe(GalvanStateInterlock interlock, ITestStateManager stateManager,
-                                                         VerboseManager verboseManager, StripeConfiguration stripeConfiguration)
+                                                         VerboseManager verboseManager, StripeConfiguration stripeConfiguration,
+                                                         String... startupCommand)
       throws IOException, GalvanFailureException {
     VerboseManager stripeVerboseManager = verboseManager.createComponentManager("[" + stripeConfiguration.stripeName + "]");
     // We want to create a sub-directory per-stripe.
@@ -39,7 +40,8 @@ public class CommonIdioms {
         stripeConfiguration.serverHeapInM, stripeConfiguration.serverStartPort, stripeConfiguration.serverDebugPortStart,
         stripeConfiguration.serverStartNumber, stripeConfiguration.extraJarPaths, stripeConfiguration.namespaceFragment,
         stripeConfiguration.serviceFragment, stripeConfiguration.failoverPriorityVoterCount, stripeConfiguration.clientReconnectWindowTime,
-        stripeConfiguration.tcProperties, stripeConfiguration.serverProperties, stripeConfiguration.logConfigExtension, stripeConfiguration.consistentStart);
+        stripeConfiguration.tcProperties, stripeConfiguration.serverProperties, stripeConfiguration.logConfigExtension, stripeConfiguration.consistentStart,
+        startupCommand);
   }
   /**
    * Note that the clients will be run in another thread, logging to the given logger and returning their state in stateManager.

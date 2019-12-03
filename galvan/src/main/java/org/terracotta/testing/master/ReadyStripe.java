@@ -60,7 +60,8 @@ public class ReadyStripe {
                                                     List<String> extraJarPaths, String namespaceFragment,
                                                     String serviceFragment, int failoverPriorityVoterCount,
                                                     int clientReconnectWindowTime, Properties tcProperties,
-                                                    Properties serverProperties, String logConfigExt, boolean consistentStart)
+                                                    Properties serverProperties, String logConfigExt, boolean consistentStart,
+                                                    String... startupCommand)
       throws IOException, GalvanFailureException {
     ContextualLogger configLogger = stripeVerboseManager.createComponentManager("[ConfigBuilder]").createHarnessLogger();
     // Create the config builder.
@@ -90,7 +91,7 @@ public class ReadyStripe {
     // Create the process control object.
     ContextualLogger processControlLogger = stripeVerboseManager.createComponentManager("[ProcessControl]").createHarnessLogger();
     // Register the stripe into it and start up the server in the stripe.
-    installer.startServers(consistentStart);
+    installer.startServers(consistentStart, startupCommand);
     
     // Before we return, we want to wait for all the servers in the stripe to come up.
     interlock.waitForAllServerRunning();
@@ -114,7 +115,7 @@ public class ReadyStripe {
   public final String stripeUri;
   public final ClusterInfo clusterInfo;
   public final String configText;
-  
+
   private ReadyStripe(IMultiProcessControl stripeControl, String stripeUri, ClusterInfo clusterInfo, String configText) {
     this.stripeControl = stripeControl;
     this.stripeUri = stripeUri;

@@ -22,6 +22,7 @@ import java.io.FileOutputStream;
 import java.io.IOException;
 import java.io.InputStreamReader;
 import java.io.OutputStream;
+import java.nio.file.Paths;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.Properties;
@@ -58,7 +59,7 @@ public class ServerProcess {
   private final String eyeCatcher;
 // make sure only one caller is messing around on the process
   private final Semaphore oneUser = new Semaphore(1);
-  
+
   private UUID userToken;
   
   //  flag if the server was zapped so it can be logged
@@ -128,7 +129,7 @@ public class ServerProcess {
    * 
    * @throws FileNotFoundException The logs couldn't be created since the server's working directory is missing.
    */
-  public void start(boolean consistentStart) throws FileNotFoundException {
+  public void start(boolean consistentStart, String... startupCommand) throws FileNotFoundException {
     UUID token = enter();
     try {
     // First thing we need to do is make sure that we aren't already running.
@@ -153,26 +154,20 @@ public class ServerProcess {
     
     // Put together any additional options we wanted to pass to the VM under the start script.
     String javaArguments = getJavaArguments(this.debugPort);
-    
-    // Get the command to invoke the script.
-    String startScript = getStartScriptCommand();
 
-    String[] command;
-    if (consistentStart) {
-      command = new String[]{startScript, "-c", "-n", this.serverName, this.eyeCatcher};
-    } else {
-      command = new String[]{startScript, "-n", this.serverName, this.eyeCatcher};
+    if (startupCommand == null || startupCommand.length == 0) {
+      startupCommand = getStartupCommand(consistentStart, serverName, eyeCatcher);
     }
-    // Start the inferior process.
+
     AnyProcess process = AnyProcess.newBuilder()
-        .command(command)
+        .command(startupCommand)
         .workingDir(this.serverWorkingDirectory)
         .env("JAVA_HOME", javaHome)
         .env("JAVA_OPTS", javaArguments)
         .pipeStdout(outputStream)
         .pipeStderr(stderr)
         .build();
-    
+
     reset(true);
     this.stateInterlock.serverDidStartup(this);
     Assert.assertNull(this.outputStream);
@@ -187,7 +182,7 @@ public class ServerProcess {
       exit(token);
     }
   }
-  
+
   private synchronized boolean isCrashExpected() {
     return this.isCrashExpected;
   }
@@ -214,16 +209,13 @@ public class ServerProcess {
     notifyAll();
   }
 
-  private String getStartScriptCommand() {
-    String startScript;
-    if (TestHelpers.isWindows()){
-      //There are illegal characters "(" and ")" in folder names that cause the path to be truncated and the server won't start.
-      //So we need to wrap double quotes around startScript absolute file path.
-      startScript = "\"" + new File(this.serverWorkingDirectory,"server\\bin\\start-tc-server.bat").getAbsolutePath() + "\"";
-    }else {
-      startScript = "server/bin/start-tc-server.sh";
+  String[] getStartupCommand(boolean consistentStart, String serverName, String eyeCatcher) {
+    String startScript = Paths.get("server", "bin", "start-tc-server" + (TestHelpers.isWindows() ? ".bat" : ".sh")).toString();
+    if (consistentStart) {
+      return new String[]{startScript, "-c", "-n", serverName, eyeCatcher};
+    } else {
+      return new String[]{startScript, "-n", serverName, eyeCatcher};
     }
-    return startScript;
   }
 
   private String getJavaArguments(int debugPort) {
@@ -267,6 +259,7 @@ public class ServerProcess {
     String pidEventName = "PID";
     String activeReadyName = "ACTIVE";
     String passiveReadyName = "PASSIVE";
+    String diagnosticReadyName = "diagnostic mode";
     String zapEventName = "ZAP";
     String warn = "WARN";
     String err = "ERROR";
@@ -274,6 +267,7 @@ public class ServerProcess {
     eventMap.put("PID is", pidEventName);
     eventMap.put("Terracotta Server instance has started up as ACTIVE node", activeReadyName);
     eventMap.put("Moved to State[ PASSIVE-STANDBY ]", passiveReadyName);
+    eventMap.put("Started the server in diagnostic mode", diagnosticReadyName);
     eventMap.put("Restarting the server", zapEventName);
     eventMap.put("WARN", warn);
     eventMap.put("ERROR", err);
@@ -306,6 +300,11 @@ public class ServerProcess {
       @Override
       public void onEvent(Event event) throws Throwable {
         ServerProcess.this.didBecomeActive(false);
+      }});
+    serverBus.on(passiveReadyName, new EventListener() {
+      @Override
+      public void onEvent(Event event) throws Throwable {
+        stateInterlock.serverInDiagnosticMode(ServerProcess.this);
       }});
     serverBus.on(zapEventName, new EventListener() {
       @Override

@@ -89,13 +89,13 @@ public class StripeInstaller {
     }
   }
   
-  public void startServers(boolean consistentStart) {
+  public void startServers(boolean consistentStart, String... startupCommand) {
     Assert.assertFalse(this.isBuilt);
     for (ServerInstallation installation : this.installedServers) {
       // Note that starting the process will put it into the interlock and the server will notify it of state changes.
       ServerProcess newProcess = installation.createNewProcess();
       try {
-        newProcess.start(consistentStart);
+        newProcess.start(consistentStart, startupCommand);
       } catch (FileNotFoundException e) {
         Assert.unexpected(e);
       }

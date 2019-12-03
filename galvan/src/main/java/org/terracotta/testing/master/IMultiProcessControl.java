@@ -29,7 +29,7 @@ public interface IMultiProcessControl {
 
   /**
    * Terminates the active server, waiting for it to shut down.
-   * 
+   *
    * @throws IllegalStateException There is no active server.
    * @throws GalvanFailureException The test has failed.
    */
@@ -39,17 +39,17 @@ public interface IMultiProcessControl {
 
   /**
    * Starts one terminated server, waiting for it to start.
-   * 
+   *
    * @throws IllegalStateException There are no terminated servers.
    * @throws GalvanFailureException The test has failed.
    */
-  public void startOneServer() throws GalvanFailureException;
+  public void startOneServer(String... startupCommand) throws GalvanFailureException;
 
-  public void startOneServerWithConsistency() throws GalvanFailureException;
+  public void startOneServerWithConsistency(String... startupCommand) throws GalvanFailureException;
 
-  public void startAllServers() throws GalvanFailureException;
+  public void startAllServers(String... startupCommand) throws GalvanFailureException;
 
-  public void startAllServersWithConsistency() throws GalvanFailureException;
+  public void startAllServersWithConsistency(String... startupCommand) throws GalvanFailureException;
 
   public void terminateAllServers() throws GalvanFailureException;
 

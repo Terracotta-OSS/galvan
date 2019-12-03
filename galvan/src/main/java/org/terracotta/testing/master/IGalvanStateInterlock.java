@@ -124,6 +124,8 @@ public interface IGalvanStateInterlock {
    * @param server The newly-passive server.
    */
   public void serverBecamePassive(ServerProcess server);
+
+  public void serverInDiagnosticMode(ServerProcess server);
   /**
    * Notifies the interlock that the given server went offline (became terminated).  Note that it must have already been
    *  registered with the interlock.
