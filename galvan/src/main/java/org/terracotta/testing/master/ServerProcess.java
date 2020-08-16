@@ -260,6 +260,7 @@ public class ServerProcess {
     eventMap.put("Moved to State[ PASSIVE-STANDBY ]", passiveReadyName);
     eventMap.put("Started the server in diagnostic mode", diagnosticReadyName);
     eventMap.put("Restarting the server", zapEventName);
+    eventMap.put("Restarting server", zapEventName);
     eventMap.put("WARN", warn);
     eventMap.put("ERROR", err);
 
